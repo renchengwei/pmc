@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:jaxws="http://cxf.apache.org/jaxws"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:task="http://www.springframework.org/schema/task"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task-4.0.xsd
+        http://cxf.apache.org/jaxws   
+    	http://cxf.apache.org/schemas/jaxws.xsd">
+    	
+    <!-- CXF -->
+    <import resource="classpath:META-INF/cxf/cxf.xml" />  
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml" />  
+    <import resource="classpath:META-INF/cxf/cxf-extension-soap.xml" />  
+
+	<context:annotation-config/>
+	<!-- 通过注释方式加入类（类必须在oa路径下） -->
+	<context:component-scan base-package="rcw"/>
+	<aop:aspectj-autoproxy/> 
+	
+	<!-- 数据源配置 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		<property name="driverClass" value="com.mysql.jdbc.Driver"/>
+		<property name="jdbcUrl" value="jdbc:mysql://localhost:3306/pmc?useUnicode=true&amp;characterEncoding=UTF-8"/>
+		<property name="user" value="root"/> 
+		<property name="password" value="111111"/> 
+		<property name="minPoolSize" value="5"/>
+		<property name="maxPoolSize" value="100"/>
+		<property name="idleConnectionTestPeriod" value="30"/>
+		<property name="initialPoolSize" value="0"/>
+		<property name="preferredTestQuery" value="select 1 from tb_test "></property>
+		<property name="maxIdleTime" value="25000"/>
+		<property name="testConnectionOnCheckin" value="true"></property>
+	</bean>	 
+	
+	<!-- SessionFactory配置 -->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<!-- 自动扫描pojo -->
+		<property name="packagesToScan" value="rcw.pojo"/>
+		<property name="hibernateProperties"> 
+			<props> 
+				<!--  mysql-->
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop> 
+				<prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext</prop>
+				<prop key="hibernate.show_sql">trues</prop> 
+				<prop key="hibernate.format_sql">true</prop> 
+				<prop key="jdbc.use_scrollable_resultset">false</prop>
+			</props> 
+		</property> 
+	</bean>
+	
+	<!-- 配置事务管理器 -->
+	<bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+   		<property name="sessionFactory">
+       		<ref bean="sessionFactory"/>
+   		</property>
+	</bean>
+	
+    <!--  配置事务传播特性 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+	    <tx:attributes>
+	      <tx:method name="save*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="edit*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="del*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="update*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="add*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="find*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="get*" propagation="REQUIRED" rollback-for="Throwable"/>
+	      <tx:method name="check*" propagation="REQUIRED" rollback-for="Throwable"/>
+	    </tx:attributes>
+	</tx:advice>
+	
+	<!--  配置参与事务的类 -->
+	<aop:config>
+		<aop:pointcut id="allServiceMethod" expression="execution(* rcw.service.*.*(..))"/>
+		<aop:advisor pointcut-ref="allServiceMethod" advice-ref="txAdvice" />
+	</aop:config>
+	
+	<!-- 文件上传 -->
+    <bean id="multipartResolver"  class="org.springframework.web.multipart.commons.CommonsMultipartResolver">  
+	<!-- one of the properties available; the maximum file size in bytes   -->
+   		<property name="maxInMemorySize" value="4096" />  
+        <property name="maxUploadSize" value="524288000"/>
+        <property name="defaultEncoding" value="UTF-8" />
+	</bean>
+	
+    <!-- 对模型视图名称的解析，即在模型视图名称添加前后缀 -->    
+    <bean  class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+    <bean  class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" />
+    <bean  class="org.springframework.web.servlet.view.InternalResourceViewResolver" p:prefix="/jsp/" p:suffix=".jsp" />  
+           
+	<!-- Json输出 -->
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+	    <property name="messageConverters">
+	        <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+	        <property name="supportedMediaTypes">
+	            <list>
+	                <value>text/plain;charset=utf-8</value>
+	                <value>text/html;charset=utf-8</value>
+	                <value>text/json;charset=utf-8</value>
+	                <value>application/json;charset=utf-8</value>
+	            </list> 
+	        </property>
+	        </bean>
+	    </property>
+	</bean>
+    
+	<!-- 计划任务 
+	<context:component-scan base-package="oa.util.task" />    -->
+    <!-- Enables the Spring Task @Scheduled programming model-->
+<!--     <task:executor id="executor" pool-size="1"/>     -->
+<!--     <task:scheduler id="scheduler" pool-size="1"/>     -->
+<!--     <task:annotation-driven executor="executor" scheduler="scheduler" /> -->
+	
+	<!-- Web Service -->
+<!-- 	<jaxws:endpoint implementor="#userWS" address="/userWS"/>   -->
+</beans>
