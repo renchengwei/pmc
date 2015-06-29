@@ -94,6 +94,11 @@ div#rMenu ul li {
 </head>
 
 <body class="easyui-layout" style="width: 100%; height: 100%">
+	<div region="north" class="headSkin" style="height:30px;padding:5px;border-left: 0px;border-top: 0px;border-right: 0px;">
+   		<div style="padding:0px;margin: 0px;font-size: 16px;">
+   			<a style="text-decoration: none;" href="<%=basePath%>main.jsp">首页</a>-><a style="text-decoration: none;" href="<%=basePath%>jsp/user/userindex.jsp">人员管理</a>
+   		</div>
+   	</div>
 	<div region="west" split="false" style="width: 200px;border-left: 0px;border-top: 0px;" noheader="true">
 		<ul id="treeDemo" class="ztree"></ul>
 	</div>

@@ -132,7 +132,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 		<table id="menutable" style="margin-left: auto; margin-right: auto;">
 			<tr>
 				<td>
-					<div class="menudiv" onclick="menuclick('')">
+					<div class="menudiv" onclick="menuclick('jsp/project/prolist.jsp')">
 						<img alt="" src="images/email.jpg" width="150px" height="150px"/>
 						<div style="padding-top: 2px;">项目管理</div>
 					</div>
